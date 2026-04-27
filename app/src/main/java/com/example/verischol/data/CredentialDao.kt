@@ -12,4 +12,7 @@ interface CredentialDao {
 
     @Query("SELECT * FROM credentials ORDER BY timestamp DESC")
     suspend fun getAll(): List<Credential>
+
+    @Query("DELETE FROM credentials WHERE id = :id")
+    suspend fun deleteById(id: String)
 }

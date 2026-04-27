@@ -3,20 +3,23 @@ package com.example.verischol.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.verischol.theme.*
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import java.text.SimpleDateFormat
@@ -32,7 +35,6 @@ fun CredentialDetailScreen(
 ) {
     val gson = remember { GsonBuilder().setPrettyPrinting().create() }
 
-    // Clean JSON (remove payloadString if exists)
     val cleanedJson = remember(vcJson) {
         try {
             val root = JsonParser.parseString(vcJson).asJsonObject
@@ -43,136 +45,183 @@ fun CredentialDetailScreen(
         }
     }
 
-    // Extract structured fields
-    val root = JsonParser.parseString(vcJson).asJsonObject
-    val payload = root.getAsJsonObject("payload")
-
-    val issuer = payload.get("iss")?.asString ?: "Unknown"
-    val subjectDid = payload.get("sub")?.asString ?: "Unknown"
-
-    val vc = payload.getAsJsonObject("vc")
-    val cs = vc.getAsJsonObject("credentialSubject")
-
-    val name = cs.get("name")?.asString ?: "Unknown"
-
-    // FIXED type extraction
-    val typeArray = vc.getAsJsonArray("type")
-    val degreeType = if (typeArray != null && typeArray.size() > 1)
-        typeArray[1].asString
-    else
-        "DegreeCredential"
-
-    // Format date
-    val issuedAt =
+    val credentialData = remember(vcJson) {
         try {
-            val date = Date(payload.get("iat").asLong)
-            SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(date)
+            val root = JsonParser.parseString(vcJson).asJsonObject
+            val payload = root.getAsJsonObject("payload")
+            val iss = payload.get("iss")?.asString ?: "Unknown"
+            val sub = payload.get("sub")?.asString ?: "Unknown"
+            val vc = payload.getAsJsonObject("vc")
+            val cs = vc.getAsJsonObject("credentialSubject")
+            val n = cs.get("name")?.asString ?: "Unknown"
+            val typeArray = vc.getAsJsonArray("type")
+            val deg = if (typeArray != null && typeArray.size() > 1) {
+                typeArray[1].asString
+            } else {
+                "AcademicCredential"
+            }
+            val iatLong = payload.get("iat")?.asLong ?: 0L
+            val date = Date(iatLong)
+            val iat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(date)
+            
+            CredentialData(n, deg, iss, sub, iat)
         } catch (e: Exception) {
-            "Unknown"
+            CredentialData("Unknown", "AcademicCredential", "Unknown", "Unknown", "Unknown")
         }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Credential Details") },
+                title = { Text("Credential Record", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = onShowQr,
+                containerColor = PrimaryBlue,
+                contentColor = SurfaceWhite
+            ) {
+                Icon(Icons.Default.QrCode, contentDescription = "QR")
+                Spacer(Modifier.width(8.dp))
+                Text("Present QR")
+            }
         }
     ) { padding ->
 
         Column(
             modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
-                .padding(16.dp)
+                .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            Spacer(modifier = Modifier.height(4.dp))
 
             // VERIFIED CARD
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor =
-                        if (verified) Color(0xFFDFF6E0)
-                        else Color(0xFFFFE1E1)
+                    containerColor = if (verified) SuccessGreenBackground else ErrorRedBackground
                 ),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(18.dp),
+                    modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         if (verified) Icons.Default.CheckCircle else Icons.Default.Warning,
                         contentDescription = null,
-                        tint = if (verified) Color(0xFF2E7D32) else Color(0xFFC62828)
+                        tint = if (verified) SuccessGreen else ErrorRed,
+                        modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = if (verified) "Credential Verified" else "Verification Failed",
-                        style = MaterialTheme.typography.titleMedium
+                        text = if (verified) "On-Chain Verified" else "Verification Failed",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (verified) Color(0xFF065F46) else Color(0xFF991B1B)
                     )
                 }
             }
 
-            // DEGREE CARD
+            // DIGITAL CERTIFICATE CARD
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(PrimaryBlue, PrimaryLight)
+                        )
+                    )
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.School, contentDescription = null, tint = SurfaceWhite, modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = credentialData.degreeType,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SurfaceWhite
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text("ISSUED TO", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(credentialData.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = SurfaceWhite)
+                    
+                    Spacer(modifier = Modifier.height(20.dp))
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column {
+                            Text("DATE ISSUED", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(credentialData.issuedAt, fontSize = 14.sp, color = SurfaceWhite, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                    
+                    Text("ISSUER", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = credentialData.issuer,
+                        fontSize = 12.sp,
+                        color = SurfaceWhite,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+
+            // METADATA
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceWhite)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-
-                    Text(
-                        text = "🎓 Academic Credential",
-                        fontSize = 22.sp,
-                        color = Color(0xFF1A1A1A)
-                    )
-
+                    Text("Subject DID", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                    Text(credentialData.subjectDid, fontSize = 14.sp, color = TextPrimary)
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text("Raw JSON", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    Text("Name: $name", fontSize = 16.sp)
-                    Text("Degree Type: $degreeType", fontSize = 16.sp)
-                    Text("Subject DID: $subjectDid", fontSize = 15.sp, color = Color.Gray)
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text("Issued On:", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                    Text(issuedAt, fontSize = 15.sp, color = Color.Gray)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("Issuer:", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                    Text(issuer, fontSize = 15.sp, color = Color.Gray)
+                    Surface(
+                        color = BackgroundLight,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = cleanedJson,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
+                            color = TextPrimary,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
                 }
             }
-
-            // QR BUTTON
-            Button(
-                onClick = onShowQr,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Show QR Code")
-            }
-
-            // JSON VIEWER
-           /* Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F2F2))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Full Credential JSON", fontSize = 18.sp)
-                    Spacer(Modifier.height(12.dp))
-                    Text(cleanedJson, fontSize = 13.sp)
-                }
-            }*/
+            
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
+
+data class CredentialData(
+    val name: String,
+    val degreeType: String,
+    val issuer: String,
+    val subjectDid: String,
+    val issuedAt: String
+)

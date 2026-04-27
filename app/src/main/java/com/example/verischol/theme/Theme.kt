@@ -9,28 +9,27 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import com.example.verischol.theme.Typography
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = PrimaryLight,
+    secondary = AccentTeal,
+    background = TextPrimary,
+    surface = TextPrimary,
+    onPrimary = SurfaceWhite,
+    onSecondary = SurfaceWhite,
+    onBackground = SurfaceWhite,
+    onSurface = SurfaceWhite
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = PrimaryBlue,
+    secondary = AccentTeal,
+    background = BackgroundLight,
+    surface = SurfaceWhite,
+    onPrimary = SurfaceWhite,
+    onSecondary = SurfaceWhite,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary
 )
 
 @Composable

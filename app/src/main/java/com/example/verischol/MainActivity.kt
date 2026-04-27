@@ -20,7 +20,7 @@ import com.google.gson.Gson
 class MainActivity : ComponentActivity() {
 
     private val issuerPublicKey =
-        "zo1I6f0w7TM6K4yZxWFXTYPGOAp38i0hraO0E+6P77E="
+        "iJZ2TuLIQKTXDnoeZ4dell7gqSY8uipXTFdhk5VwwUU="
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
