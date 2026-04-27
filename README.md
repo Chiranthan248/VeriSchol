@@ -54,5 +54,8 @@ The server will run on `http://localhost:8080`.
 *   **Android**: Kotlin, Jetpack Compose, Retrofit, Room, CameraX, ML Kit, BouncyCastle
 *   **Backend**: Node.js, Express, `tweetnacl`, `uuid`
 
-## License
-[MIT License](LICENSE)
+## Preview
+
+![democredentials.png](/assets/demo.png)
+
+![homepage.png](/assets/home%20(2).png)
